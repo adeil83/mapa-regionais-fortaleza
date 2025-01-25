@@ -1,0 +1,99 @@
+# Mapa da capital do Ceará
+# Mapa colorido - Todos oss bairros/regional
+# Autor: Adeil Araújo
+# Data: 24.jan.2025
+# Instalando pacotes...
+if (!require("sf")) install.packages("sf")
+if (!require("geobr")) install.packages("geobr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("ggplot2")) install.packages("ggplot2")
+# Carregando pacotes... 
+library(sf)
+library(geobr)
+library(dplyr)
+library(ggplot2)
+# 1. Carregar os dados dos bairros do Ceará usando o geobr
+bairros_ceara <- read_neighborhood(year = 2022)  
+# Filtrar apenas os bairros da capital do Ceará
+bairros_fortaleza <- bairros_ceara %>% 
+  filter(name_muni == "Fortaleza")
+# Verificar se os bairros foram carregados corretamente
+print(unique(bairros_fortaleza$name_neighborhood))
+# 2. Criar uma tabela que relacione os bairros às regionais 
+regionais_bairros <- data.frame(
+  nome_bairro = c(
+    # Regional 1
+    "Vila Velha", "Barra do Ceará", "Jardim Guanabara", "Jardim Iracema", "Pirambu", "Cristo Redentor","Carlito Pamplona","Jacarecanga", "Floresta", "Álvaro Weyne",
+    # Regional 2
+    "Meireles", "Aldeota", "Varjota", "Papicu", "De Lourdes", "Cais do Porto", "Mucuripe", "Vicente Pinzón", "Joaquim Távora", "Dionísio Torres", "São João do Tauape",
+    # Regional 3
+    "Quintino Cunha", "Olavo Oliveira", "Antônio Bezerra", "Padre Andrade", "Presidente Kennedy", "Ellery", "Monte Castelo", "São Gerardo", "Farias Brito","Parque Araxá", "Parquelândia", "Amadeu Furtado", "Rodolfo Teófilo",
+    # Regional 4
+    "José Bonifácio", "Benfica", "Damas", "Fátima", "Montese", "Jardim América", "Bom Futuro", "Itaoca", "Parangaba", "Vila Peri", "Parreão", "Vila União", "Aeroporto",
+    # Regional 5
+    "Granja Portugal", "Bom Jardim", "Siqueira", "Bonsucesso","Granja Lisboa",  
+    # Regional 6
+    "Cidade dos Funcionários", "Messejana", "Cambeba", "Jardim das Oliveiras", "Alto da Balança", "Aerolândia", "Parque Manibura", "Parque Iracema", "Lagoa Redonda", "Coaçu", "Paupina", "São Bento", "Curió", "José de Alencar", "Guajeru",
+    # Regional 7
+    "Cocó", "Cidade 2000", "Salinas", "Guararapes", "Edson Queiroz", "Sapiranga / Coité", "Praia do Futuro I", "Praia do Futuro II", "Manuel Dias Branco", "Sabiaguaba","Engenheiro Luciano Cavalcante",
+    # Regional 8
+    "Serrinha", "Itaperi", "Dendê", "Planalto Ayrton Senna", "Prefeito José Walter", "Parque Dois Irmãos", "Passaré", "Boa Vista / Castelão", "Dias Macedo",
+    # Regional 9
+    "Conjunto Palmeiras", "Jangurussu", "Ancuri", "Cajazeiras", "Barroso", "Pedras", "Parque Santa Maria",
+    # Regional 10
+    "Novo Mondubim", "Parque São José", "Mondubim", "Canindezinho", "Conjunto Esperança", "Parque Santa Rosa", "Parque Presidente Vargas", "Aracapé", "Maraponga", "Jardim Cearense", "Manoel Sátiro", 
+    # Regional 11
+    "Autran Nunes", "João XXIII", "Pici", "Bela Vista", "Panamericano", "Couto Fernandes", "Demócrito Rocha", "Dom Lustosa", "Henrique Jorge", "Jóquei Clube", "Genibaú", "Conjunto Ceará I", "Conjunto Ceará II",
+    # Regional 12
+    "Centro", "Praia de Iracema", "Moura Brasil"
+  ),
+  regional = c(
+    rep("Regional 1", 10), rep("Regional 2", 11), rep("Regional 3", 13),
+    rep("Regional 4", 13), rep("Regional 5", 5), rep("Regional 6", 15),
+    rep("Regional 7", 11), rep("Regional 8", 9), rep("Regional 9", 7),
+    rep("Regional 10", 11), rep("Regional 11", 13), rep("Regional 12", 3)
+  )
+)
+# 3. Adicionar as informações de regionais aos dados geográficos e ajustar a ordem da legenda
+bairros_fortaleza <- bairros_fortaleza %>%
+  left_join(regionais_bairros, by = c("name_neighborhood" = "nome_bairro")) %>%
+  mutate(regional = factor(regional, levels = paste0("Regional ", 1:12)))
+# Verificar a correspondência após o join
+print(bairros_fortaleza %>% count(regional))
+# 4. Criar uma paleta de cores para as regionais
+cores_regionais <- c(
+  "Regional 1" = "red", "Regional 2" = "orange", "Regional 3" = "yellow", 
+  "Regional 4" = "green", "Regional 5" = "cyan", "Regional 6" = "purple",
+  "Regional 7" = "limegreen", "Regional 8" = "pink", "Regional 9" = "brown", 
+  "Regional 10" = "blue", "Regional 11" = "gold", "Regional 12" = "gray"
+)
+# 5. Criar o mapa das regionais com nomes dos bairros
+mapa_regionais <- ggplot(data = bairros_fortaleza) +
+  geom_sf(aes(fill = regional), color = "white", size = 0.3) + # Melhorar separação entre regiões
+  geom_sf_text(aes(label = name_neighborhood), size = 1.8, color = "black") + # Ajustar tamanho do texto
+  scale_fill_manual(values = cores_regionais, name = "Regionais") +
+  theme_void() +
+  labs(
+    title = "Regionais de Fortaleza",
+    subtitle = "Baseado no Mapa Oficial da Prefeitura"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 14),
+    legend.title = element_text(size = 12),
+    legend.text = element_text(size = 10)
+  )
+# 6. Salvar o mapa como PNG com alta qualidade
+ggsave(
+  filename = "mapa_regionais_fortaleza.png", 
+  plot = mapa_regionais, 
+  width = 25,        # Largura aumentada para mais detalhes
+  height = 18,       # Altura proporcional à largura
+  dpi = 1200,        # Alta resolução para melhor nitidez
+  units = "cm"       # Usar centímetros para dimensões exatas
+)
+# 7. Salvando o mapa em PDF para impressão
+ggsave("mapa_regionais_fortaleza.pdf", plot = mapa_regionais, width = 16, height = 12)
+# Exibir o mapa
+print(mapa_regionais)
+
