@@ -89,6 +89,9 @@ mapa_credes <- ggplot(data = municipios_ce) +
 # Salvar o mapa como PNG
 ggsave("mapa_credes_ceara_todos_municipios.png", plot = mapa_credes, width = 12, height = 10, dpi = 300)
 
+# Salvar o mapa como PDF
+ggsave("mapa_credes.pdf", plot = mapa_credes, width = 16, height = 12)
+
 # Exibir o mapa
 print(mapa_credes)
 
