@@ -1,0 +1,112 @@
+# Semana Pedagógica das CREDES 2025
+# Mapa colorido - CREDE/Cidades inscritas
+# Autor: Adeil Araújo
+# Data: 15.jan.2025
+
+# Instalar pacotes necessários (caso não estejam instalados)
+if (!require("sf")) install.packages("sf")
+if (!require("geobr")) install.packages("geobr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggrepel")) install.packages("ggrepel")
+
+# Carregar pacotes necessários
+library(geobr)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+# Ler os dados dos municípios do Ceará
+municipios_ce <- read_municipality(code_muni = 'CE', year = 2020)
+
+# Definir as listas de municípios para cada CREDE
+credes_municipios <- list(
+  "CREDE 03" = c("Acaraú", "Bela Cruz", "Cruz", "Itarema", "Jijoca De Jericoacoara", "Marco", "Morrinhos"),
+  "CREDE 12" = c("Quixadá", "Boa Viagem", "Choró", "Ibaretama", "Ibicuitinga", "Madalena", "Quixeramobim", "Banabuiú"),
+  "CREDE 16" = c("Iguatu", "Acopiara", "Cariús", "Catarina", "Jucás", "Quixelô", "Orós")
+)
+
+# Função para atribuir a CREDE correta a cada município
+atribuir_crede <- function(municipio, credes_municipios) {
+  for (crede in names(credes_municipios)) {
+    if (municipio %in% credes_municipios[[crede]]) {
+      return(crede)
+    }
+  }
+  return("NA")  # Define explicitamente as áreas sem CREDE
+}
+
+# Adicionar uma nova coluna para indicar a CREDE correspondente
+municipios_ce <- municipios_ce %>%
+  mutate(CREDE = sapply(name_muni, atribuir_crede, credes_municipios = credes_municipios))
+
+# Criar um dataframe com os municípios destacados
+municipios_destaque <- data.frame(
+  name_muni = c("Acaraú", "Quixadá", "Iguatu"),
+  escala = c(1, 1, 1),
+  colors = c("blue", "green", "orange")  # Cores personalizadas para os destaques
+)
+
+# Combinar os dados dos municípios com os dados destacados
+municipios_ce <- municipios_ce %>%
+  left_join(municipios_destaque, by = "name_muni")
+
+# Filtrar apenas os municípios com dados destacados
+municipios_ce_destaque <- municipios_ce %>%
+  filter(!is.na(escala))
+
+# Extrair coordenadas das geometrias
+municipios_centroides <- st_centroid(municipios_ce_destaque) %>%
+  cbind(st_coordinates(.))  # Extrair coordenadas e unir ao dataframe
+
+# Definir um vetor de cores para as CREDEs
+crede_colors <- c(
+  "CREDE 03" = "lightgreen",       
+  "CREDE 12" = "khaki",            
+  "CREDE 16" = "mediumaquamarine",
+  "NA" = "lightpink"               # Cor para áreas sem dados
+)
+
+# Criar o mapa com estilo simplificado e destacar as CREDEs na legenda
+mapa_credes <- ggplot(data = municipios_ce) + 
+  # Colorir os municípios com suas CREDEs
+  geom_sf(aes(fill = CREDE), color = "white") + 
+  scale_fill_manual(
+    values = crede_colors,           # Define as cores para as CREDEs
+    breaks = c("CREDE 03", "CREDE 12", "CREDE 16"),  # Apenas as CREDEs aparecem na legenda
+    guide = guide_legend(
+      title = "CREDE"  # Título da legenda
+    )
+  ) +
+  
+  # Adicionar círculos nos municípios destacados com cores personalizadas
+  geom_point(data = municipios_centroides, 
+             aes(x = X, 
+                 y = Y), 
+             shape = 21, fill = municipios_centroides$colors, alpha = 0.7) +
+  
+  # Adicionar rótulos das cidades sem o número de escolas
+  geom_text_repel(data = municipios_centroides, 
+                  aes(x = X, 
+                      y = Y, 
+                      label = name_muni), 
+                  size = 4, color = "black") +
+  
+  # Estilo de tema sem eixos e rótulos
+  theme_void() +  
+  theme(
+    panel.background = element_rect(fill = "white", color = NA)  # Fundo branco
+  ) +
+  
+  # Títulos e subtítulos
+  labs(title = "Aprendizagem Baseada em Projetos com IA", 
+       subtitle = "Semana Pedagógica das CREDES 2025") + 
+  theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5, size = 12))
+
+# Salvar o mapa como PNG
+ggsave("mapa_credes_ceara_corrigido.png", plot = mapa_credes, width = 12, height = 10, dpi = 300)
+
+# Exibir o mapa
+print(mapa_credes)
