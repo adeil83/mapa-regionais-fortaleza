@@ -1,0 +1,52 @@
+#Química
+# Carregar os pacotes necessários
+library(geobr)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(readxl)
+library(stringr)
+if (!requireNamespace("svglite", quietly = TRUE)) install.packages("svglite")
+library(svglite)
+
+# Ler os dados dos municípios do Ceará
+municipios_ce <- read_municipality(code_muni = 'CE', year = 2020)
+
+# Carregar os dados do arquivo Excel
+file_path <- "/cloud/project/contagem_efetivos_disciplina.xlsx"
+dados_professores <- read_excel(file_path)
+
+# Processar os dados para contar o número de professores de Química por município
+dados_professores <- dados_professores %>%
+  filter(DISCIPLINA_DETALHAMENTO == "QUÍMICA") %>%
+  group_by(MUNICIPIO) %>%
+  summarise(QUI = sum(QTD_EFETIVOS, na.rm = TRUE))
+
+# Converter nomes dos municípios para título (capitalização adequada)
+dados_professores$MUNICIPIO <- str_to_title(dados_professores$MUNICIPIO)
+
+# Combinar os dados dos professores com os dados geográficos dos municípios
+municipios_ce <- municipios_ce %>%
+  left_join(dados_professores, by = c("name_muni" = "MUNICIPIO"))
+
+# Filtrar apenas os municípios com professores de química
+municipios_com_professores <- municipios_ce %>%
+  filter(!is.na(QUI))
+
+# Criar o mapa
+mapa <- ggplot() + 
+  geom_sf(data = municipios_ce, fill = "gray90", color = "white") +
+  geom_sf(data = municipios_com_professores, aes(fill = QUI), color = "blue") +
+  geom_sf_text(data = municipios_com_professores, aes(label = paste(name_muni, QUI, sep = ": ")), size = 2.5, nudge_y = 0.1) +
+  scale_fill_gradient(name = "Professores de Química", low = "lightyellow", high = "red", na.value = "gray90") +
+  theme_minimal() +
+  theme(panel.background = element_rect(fill = "white", colour = "white")) +  # Define o fundo do painel como branco
+  labs(title = "Quantidade de Professores Efetivos de Química por Município no Ceará", x = NULL, y = NULL) +
+  theme(legend.position = "bottom")
+
+# Salvar o mapa como PNG
+ggsave("mapa_professores_quimica_ce.png", plot = mapa, width = 10, height = 8, dpi = 300)
+
+# Salvar o mapa como PDF
+ggsave("mapa_professores_quimica_ce.pdf", plot = mapa, width = 16, height = 12)
+
