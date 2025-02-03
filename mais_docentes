@@ -1,0 +1,111 @@
+# Projeto Mais Docentes - CEARÁ
+# Mapa colorido - CREDE/Cidades inscritas
+# Autor: Adeil Araújo
+# Data: 03.out.2024
+
+# Instalar pacotes necessários (caso não estejam instalados)
+if (!require("sf")) install.packages("sf")
+if (!require("geobr")) install.packages("geobr")
+if (!require("dplyr")) install.packages("dplyr")
+if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("ggrepel")) install.packages("ggrepel")
+
+# Carregar pacotes necessários
+library(geobr)
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(ggrepel)
+
+# Ler os dados dos municípios do Ceará
+municipios_ce <- read_municipality(code_muni = 'CE', year = 2020)
+
+# Definir as listas de municípios para cada CREDE
+credes_municipios <- list(
+  "CREDE 01" = c("Aquiraz", "Caucaia", "Eusébio", "Guaiúba", "Itaitinga", "Maranguape", "Pacatuba", "Maracanaú"),
+  "CREDE 02" = c("Itapipoca", "Amontada", "Uruburetama", "Umirim", "Tururu", "Trairi", "Tejuçuoca", "São Luís Do Curu", "São Gonçalo Do Amarante", "Pentecoste", "Paraipaba", "Paracuru", "Miraíma", "Itapajé", "Apuiarés"),
+  "CREDE 03" = c("Acaraú", "Bela Cruz", "Cruz", "Itarema", "Jijoca De Jericoacoara", "Marco", "Morrinhos"),
+  "CREDE 04" = c("Camocim", "Barroquinha", "Chaval", "Granja", "Martinópole", "Uruoca"),
+  "CREDE 05" = c("Carnaubal", "Croatá", "Guaraciaba Do Norte", "Ibiapina", "Ipu", "São Benedito", "Tianguá", "Ubajara", "Viçosa Do Ceará"),
+  "CREDE 06" = c("Sobral", "Alcântaras", "Cariré", "Coreaú", "Forquilha", "Frecheirinha", "Graça", "Groaíras", "Hidrolândia", "Irauçuba", "Massapê", "Meruoca", "Moraújo", "Mucambo", "Pacujá", "Pires Ferreira", "Reriutaba", "Santana Do Acaraú", "Senador Sá", "Varjota"),
+  "CREDE 07" = c("Canindé", "Santa Quitéria", "Itatira", "Caridade", "Paramoti", "General Sampaio"),
+  "CREDE 08" = c("Acarape", "Aracoiaba", "Aratuba", "Barreira", "Baturité", "Capistrano", "Guaramiranga", "Itapiúna", "Mulungu", "Ocara", "Pacoti", "Palmácia", "Redenção"),
+  "CREDE 09" = c("Beberibe", "Cascavel", "Chorozinho", "Horizonte", "Pacajus", "Pindoretama"),
+  "CREDE 10" = c("Alto Santo", "Aracati", "Fortaleza", "Icapuí", "Itaiçaba", "Jaguaruana", "Limoeiro Do Norte", "Morada Nova", "Palhano", "Quixeré", "Russas", "São João Do Jaguaribe", "Tabuleiro Do Norte", "Fortim"),
+  "CREDE 11" = c("Ereré", "Iracema", "Jaguaretama", "Jaguaribara", "Jaguaribe", "Pereiro", "Potiretama"),
+  "CREDE 12" = c("Boa Viagem", "Choró", "Ibaretama", "Ibicuitinga", "Madalena", "Quixadá", "Quixeramobim", "Banabuiú"),
+  "CREDE 13" = c("Ararendá", "Crateús", "Catunda", "Independência", "Ipaporanga", "Ipueiras", "Monsenhor Tabosa", "Nova Russas", "Novo Oriente", "Poranga", "Tamboril"),
+  "CREDE 14" = c("Senador Pompeu", "Milhã", "Solonópole", "Piquet Carneiro", "Pedra Branca", "Mombaça", "Deputado Irapuan Pinheiro"),
+  "CREDE 15" = c("Aiuaba", "Arneiroz", "Parambu", "Quiterianópolis", "Tauá"),
+  "CREDE 16" = c("Iguatu", "Acopiara", "Cariús", "Catarina", "Jucás", "Quixelô", "Orós"),
+  "CREDE 17" = c("Baixio", "Cedro", "Icó", "Ipaumirim", "Lavras Da Mangabeira", "Umari", "Várzea Alegre", "Granjeiro"),
+  "CREDE 18" = c("Altaneira", "Antonina Do Norte", "Araripe", "Assaré", "Campos Sales", "Crato", "Nova Olinda", "Potengi", "Saboeiro", "Salitre", "Santana Do Cariri", "Tarrafas"),
+  "CREDE 19" = c("Barbalha", "Caririaçu", "Farias Brito", "Granjeiro", "Jardim", "Juazeiro Do Norte"),
+  "CREDE 20" = c("Abaiara", "Aurora", "Barro", "Brejo Santo", "Jati", "Mauriti", "Milagres", "Missão Velha", "Penaforte", "Porteiras"),
+  "CREDE 21" = c("Fortaleza")
+)
+
+# Função para atribuir a CREDE correta a cada município
+atribuir_crede <- function(municipio, credes_municipios) {
+  for (crede in names(credes_municipios)) {
+    if (municipio %in% credes_municipios[[crede]]) {
+      return(crede)
+    }
+  }
+  return(NA)  # Se o município não pertencer a nenhuma CREDE
+}
+
+# Adicionar uma nova coluna para indicar a CREDE correspondente
+municipios_ce <- municipios_ce %>%
+  mutate(CREDE = sapply(name_muni, atribuir_crede, credes_municipios = credes_municipios))
+
+# Criar um dataframe com os municípios e suas quantidades de escolas (escala)
+municipios_destaque <- data.frame(
+  name_muni = c("Fortaleza", "Aquiraz", "Caucaia", "Eusébio", "Guaiúba", "Itaitinga", "Maranguape", "Pacatuba", "Maracanaú", "Pereiro", "Amontada", "Itapipoca", "Trairí", "Paracuru", "Paraipaba", "São Gonçalo Do Amarante", "Itapajé",
+                "Tururu", "Pentecoste", "Tejuçuoca", "Canindé", "Baturité", "Barreira", "Mombaça", "Pedra Branca", "Quiterianópolis", "Tauá", "Iguatu", "Acopiara", "Icó", "Várzea Alegre", "Saboeiro", "Campos Sales", "Crato", "Nova Olinda",
+                "Santana Do Cariri", "Salitre", "Barbalha","Jardim", "Juazeiro Do Norte", "Itarema","Jijoca De Jericoacoara", "Marco", "Acaraú", "Camocim","Granja", "Uruoca", "Barroquinha",
+                "Guaraciaba Do Norte", "Tianguá","Ubajara", "Viçosa Do Ceará", "Croatá", "Sobral","Massapê","Irauçuba", "Limoeiro Do Norte", "Aracati","Morada Nova", "Russas", "Banabuiú", "Boa Viagem",
+                "Quixadá","Quixeramobim", "Ipueiras", "Crateús", "Novo Oriente", "Beberibe", "Cascavel", "Pindoretama", "Horizonte", "Pacajus"),
+  escala = c(42, 1, 6, 3, 1, 1, 3, 1, 7, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7,
+             1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 3, 2, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2)
+)
+
+# Combinar os dados dos municípios com os dados geográficos
+municipios_ce <- municipios_ce %>%
+  left_join(municipios_destaque, by = "name_muni")
+
+# Filtrar apenas os municípios com dados destacados
+municipios_ce_destaque <- municipios_ce %>%
+  filter(!is.na(escala))
+
+# Extrair coordenadas das geometrias
+municipios_centroides <- st_centroid(municipios_ce_destaque) %>%
+  cbind(st_coordinates(.))  # Extrair coordenadas e unir ao dataframe
+
+# Criar o mapa com estilo simplificado e destacar as CREDEs na legenda
+mapa_credes <- ggplot(data = municipios_ce) + 
+  geom_sf(aes(fill = CREDE), color = "white") +
+  geom_point(
+    data = municipios_centroides,
+    aes(x = X, y = Y, size = escala),
+    shape = 21, fill = "skyblue", alpha = 0.7
+  ) +
+  geom_text_repel(
+    data = municipios_centroides,
+    aes(x = X, y = Y, label = paste(name_muni, "(", escala, ")", sep = "")),
+    size = 4, color = "black", max.overlaps = 30
+  ) +
+  theme_void() +
+  labs(
+    title = "Projeto Mais Docentes",
+    subtitle = "Quantidade de escolas atendidas por município"
+  ) +
+  theme(plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5, size = 12))
+
+# Salvar o mapa como PNG
+ggsave("mapa_credes_ceara.png", plot = mapa_credes, width = 12, height = 10, dpi = 300)
+
+# Exibir o mapa
+print(mapa_credes)
+
