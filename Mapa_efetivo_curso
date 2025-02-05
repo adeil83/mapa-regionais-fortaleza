@@ -1,0 +1,90 @@
+# Carregar os pacotes necessários
+library(geobr)
+library(dplyr)
+library(ggplot2)
+library(sf)
+library(readxl)
+library(stringr)
+if (!requireNamespace("svglite", quietly = TRUE)) install.packages("svglite")
+library(svglite)
+
+# Ler os dados geográficos dos municípios do Ceará
+municipios_ce <- read_municipality(code_muni = 'CE', year = 2020)
+
+# Carregar os dados do arquivo Excel com professores efetivos
+file_path <- "/cloud/project/contagem_efetivos_disciplina.xlsx"
+dados_professores <- read_excel(file_path)
+
+# Processar os dados para contar o número de professores de física por município
+dados_professores <- dados_professores %>%
+  filter(DISCIPLINA_DETALHAMENTO == "FÍSICA") %>%
+  group_by(MUNICIPIO) %>%
+  summarise(FIS = sum(QTD_EFETIVOS, na.rm = TRUE))
+
+# Converter nomes dos municípios para título (capitalização adequada)
+dados_professores$MUNICIPIO <- str_to_title(dados_professores$MUNICIPIO)
+
+# Lista das cidades onde há cursos de Física por universidade pública no Ceará
+cidades_fisica <- data.frame(
+  MUNICIPIO = c(
+    # IFCE (9)
+    "Acaraú", "Cedro", "Crateús", "Fortaleza", "Horizonte", "Itapipoca", "Maranguape", "Sobral", "Tianguá",
+    # UECE Presencial (3)
+    "Iguatu", "Limoeiro do Norte", "Quixadá",
+    # UECE EAD (6)
+    "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
+    # UFC Presencial (1)
+    "Fortaleza",
+    # UFC Virtual (10)
+    "Beberibe", "Camocim", "Caucaia", "Fortaleza", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo do Amarante", "Sobral",
+    # UVA (1)
+    "Sobral",
+    # URCA (1)
+    "Juazeiro do Norte"
+  ),
+  CURSO = 1  # Indica a presença de um curso de Física
+)
+
+# Converter nomes das cidades para título (capitalização correta)
+cidades_fisica$MUNICIPIO <- str_to_title(cidades_fisica$MUNICIPIO)
+
+# Combinar os dados dos professores e dos cursos com os dados geográficos dos municípios
+municipios_ce <- municipios_ce %>%
+  left_join(dados_professores, by = c("name_muni" = "MUNICIPIO")) %>%
+  left_join(cidades_fisica, by = c("name_muni" = "MUNICIPIO"))
+
+# Definir categorias para a legenda do mapa
+municipios_ce$Categoria <- case_when(
+  !is.na(municipios_ce$FIS) & !is.na(municipios_ce$CURSO) ~ "Curso e Professores",
+  !is.na(municipios_ce$FIS) ~ "Somente Professores",
+  !is.na(municipios_ce$CURSO) ~ "Somente Curso",
+  TRUE ~ "Nenhum"
+)
+
+# Criar o mapa aprimorado
+mapa <- ggplot() + 
+  geom_sf(data = municipios_ce, aes(fill = Categoria), color = "white") +  # Preenchimento com base nas categorias
+  geom_sf_text(data = municipios_ce, aes(label = name_muni), size = 2.2, box.padding = 0.5, max.overlaps = 10, color = "black") +  # Exibir nomes de todas as cidades
+  scale_fill_manual(values = c(
+    "Curso e Professores" = "#FFB6C1",  # Rosa claro
+    "Somente Professores" = "#ADD8E6",  # Azul claro
+    "Somente Curso" = "#98FB98",        # Verde claro
+    "Nenhum" = "gray90"
+  )) +
+  theme_minimal() +
+  labs(
+    title = "Cidades com Cursos de Física e Professores Efetivos no Ceará",
+    fill = "Legenda"
+  ) +
+  theme(
+    legend.position = "bottom",
+    panel.background = element_rect(fill = "white", colour = "white")
+  )
+
+# Salvar o mapa como PNG
+ggsave("mapa_cursos_professores_fisica_ce.png", plot = mapa, width = 12, height = 10, dpi = 300)
+
+# Salvar o mapa como PDF
+ggsave("mapa_cursos_professores_fisica_ce.pdf", plot = mapa, width = 16, height = 12)
+
+browseURL("mapa_cursos_professores_fisica_ce.png")
