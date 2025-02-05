@@ -1,0 +1,73 @@
+# Maria Pela América Latina
+# Data:21.out.2024
+# Instalar pacotes necessários (caso ainda não estejam instalados)
+install.packages("sf")
+install.packages("sp")
+install.packages("raster")
+install.packages("terra")
+install.packages("geodata")
+install.packages("RColorBrewer")
+install.packages("ggplot2")
+install.packages("ggrepel")
+
+# Carregar pacotes
+library(sf)
+library(sp)
+library(raster)
+library(terra)
+library(geodata)
+library(RColorBrewer)
+library(ggplot2)
+library(ggrepel)
+
+# Criar um dataframe com as coordenadas das cidades e os anos
+cidades <- data.frame(
+  cidade = c("Buenos Aires", "San Carlos de Bariloche", "Santiago", "Viña del Mar", 
+             "Valparaíso", "Montevideo", "Colonia", "Punta del Este", "Fortaleza"),
+  pais = c("Argentina", "Argentina", "Chile", "Chile", "Chile", "Uruguai", "Uruguai", "Uruguai", "Brasil"),
+  ano = c("(2022)", "(2022)", "(2023)", "(2023)", "(2023)", "(2024)", "(2024)", "(2024)", ""),
+  lat = c(-34.6037, -41.1335, -33.4489, -33.0245, -33.0472, -34.9011, -34.4713, -34.9511, -3.7172),
+  long = c(-58.3816, -71.3103, -70.6693, -71.5518, -71.6127, -56.1645, -57.8445, -54.9509, -38.5434)
+)
+
+# Baixar os dados geográficos dos países da América Latina (incluindo Paraguai, Colômbia, Peru e Bolívia) usando o pacote geodata
+argentina <- gadm(country = "ARG", level = 0, path = tempdir())  # Argentina
+chile <- gadm(country = "CHL", level = 0, path = tempdir())      # Chile
+uruguai <- gadm(country = "URY", level = 0, path = tempdir())     # Uruguai
+brasil <- gadm(country = "BRA", level = 0, path = tempdir())      # Brasil
+paraguai <- gadm(country = "PRY", level = 0, path = tempdir())    # Paraguai
+colombia <- gadm(country = "COL", level = 0, path = tempdir())    # Colômbia
+peru <- gadm(country = "PER", level = 0, path = tempdir())        # Peru
+bolivia <- gadm(country = "BOL", level = 0, path = tempdir())     # Bolívia
+
+# Combinar os países em um único objeto sf
+south_america <- rbind(
+  st_as_sf(argentina), 
+  st_as_sf(chile), 
+  st_as_sf(uruguai), 
+  st_as_sf(brasil),
+  st_as_sf(paraguai),
+  st_as_sf(colombia),
+  st_as_sf(peru),
+  st_as_sf(bolivia)
+)
+
+# Definir cores personalizadas para os países
+cores <- brewer.pal(8, "Set2")
+
+# Definir o arquivo de saída para o gráfico PNG
+png(filename = "mapa_america_latina_completo.png", width = 1000, height = 800, res = 150)
+
+# Plotar o mapa básico da América Latina com ggplot2
+ggplot() +
+  geom_sf(data = south_america, fill = cores, color = "black") +  # Desenhar os países
+  geom_point(data = cidades, aes(x = long, y = lat), color = "red", size = 3) +  # Adicionar os pontos das cidades
+  geom_text_repel(data = cidades, aes(x = long, y = lat, label = paste(cidade, ano)), size = 4, box.padding = 0.5, max.overlaps = 10) +  # Rótulos das cidades com ano
+  labs(title = "Maria pela América Latina", x = "Longitude", y = "Latitude") +  # Título do gráfico
+  theme_minimal()  # Usar um tema sem fundo pesado
+
+# Fechar o dispositivo gráfico para salvar o arquivo
+dev.off()
+
+# Exibir uma mensagem indicando que o arquivo foi gerado
+print("Gráfico salvo como 'mapa_america_latina_completo.png'")
