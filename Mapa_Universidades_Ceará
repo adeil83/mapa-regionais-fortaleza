@@ -1,0 +1,104 @@
+# Instalar e carregar pacotes necessários
+if (!requireNamespace("geobr", quietly = TRUE)) install.packages("geobr")
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("ggrepel", quietly = TRUE)) install.packages("ggrepel")
+if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr")
+if (!requireNamespace("sf", quietly = TRUE)) install.packages("sf")
+
+library(geobr)
+library(ggplot2)
+library(ggrepel)
+library(dplyr)
+library(sf)
+
+# Carregar o mapa dos municípios do Ceará
+municipios_ce <- read_municipality(code_muni = "CE", year = 2020)
+
+# Criar lista das cidades com cursos de Licenciatura em Física e suas universidades
+universidades <- data.frame(
+  MUNICIPIO = c(
+    # IFCE
+    "Acaraú", "Cedro", "Crateús", "Fortaleza", "Horizonte", "Itapipoca", "Maranguape", "Sobral", "Tianguá",
+    # UECE
+    "Fortaleza","Iguatu", "Limoeiro do Norte", "Quixadá", "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
+    # UFC
+    "Fortaleza", "Beberibe", "Camocim", "Caucaia", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo do Amarante", "Sobral",
+    # UVA
+    "Sobral",
+    # URCA
+    "Juazeiro Do Norte"
+  ),
+  UNIVERSIDADE = c(
+    # IFCE
+    "IFCE", "IFCE", "IFCE", "IFCE", "IFCE", "IFCE", "IFCE", "IFCE", "IFCE",
+    # UECE
+    "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE",
+    # UFC
+    "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC",
+    # UVA
+    "UVA",
+    # URCA
+    "URCA"
+  )
+)
+
+# Consolidar as universidades por cidade, removendo repetições
+universidades <- universidades %>%
+  group_by(MUNICIPIO) %>%
+  summarise(UNIVERSIDADE = paste(unique(UNIVERSIDADE), collapse = ", "))
+
+# Criar um identificador único para cidades com mais de uma universidade
+universidades <- universidades %>%
+  mutate(GRUPO = case_when(
+    grepl(",", UNIVERSIDADE) ~ "Múltiplas Universidades",
+    TRUE ~ UNIVERSIDADE
+  ))
+
+# Associar as universidades às cidades no mapa do Ceará
+municipios_ce <- municipios_ce %>%
+  left_join(universidades, by = c("name_muni" = "MUNICIPIO"))
+
+# Calcular os centróides das cidades com universidades
+municipios_centroides <- municipios_ce %>%
+  filter(!is.na(UNIVERSIDADE)) %>%
+  st_centroid() %>%
+  mutate(
+    X = st_coordinates(.)[, 1],
+    Y = st_coordinates(.)[, 2]
+  )
+
+# Definir cores distintas para cada universidade e para cidades com múltiplas universidades
+cores_universidades <- c(
+  "IFCE" = "#377eb8",  # Azul
+  "UECE" = "#4daf4a",  # Verde
+  "UFC" = "#e41a1c",  # Vermelho
+  "UVA" = "#984ea3",  # Roxo
+  "URCA" = "#ff7f00",  # Laranja
+  "Múltiplas Universidades" = "#ffcc00"  # Amarelo para cidades com mais de uma universidade
+)
+
+# Criar o mapa
+mapa <- ggplot() +
+  geom_sf(data = municipios_ce, fill = "gray90", color = "white") + 
+  geom_sf(data = municipios_ce %>% filter(!is.na(UNIVERSIDADE)), 
+          aes(fill = GRUPO), color = "black", size = 0.2) +
+  geom_text_repel(data = municipios_centroides, 
+                  aes(x = X, y = Y, label = paste(name_muni, "(", UNIVERSIDADE, ")")),
+                  size = 3, color = "black", box.padding = 0.3, segment.color = "gray40") + 
+  scale_fill_manual(values = cores_universidades, na.value = "gray90") +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.title = element_text(size = 16, face = "bold")
+  ) +
+  labs(title = "Mapa das Universidades com Licenciatura em Física no Ceará",
+       fill = "Universidades")
+
+# Salvar o mapa como PNG e PDF
+ggsave("mapa_universidades_ce_final.png", plot = mapa, width = 12, height = 12, dpi = 500)
+ggsave("mapa_universidades_ce_final.pdf", plot = mapa, width = 12, height = 12)
+
+# Exibir o mapa
+print(mapa)
+
