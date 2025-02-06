@@ -1,3 +1,4 @@
+#Mapas das Universidades públicas do Estado do Ceará que ofertam Licenciatura em Física
 # Instalar e carregar pacotes necessários
 if (!requireNamespace("geobr", quietly = TRUE)) install.packages("geobr")
 if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
@@ -20,9 +21,9 @@ universidades <- data.frame(
     # IFCE
     "Acaraú", "Cedro", "Crateús", "Fortaleza", "Horizonte", "Itapipoca", "Maranguape", "Sobral", "Tianguá",
     # UECE
-    "Fortaleza","Iguatu", "Limoeiro do Norte", "Quixadá", "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
+    "Fortaleza","Iguatu", "Limoeiro Do Norte", "Quixadá", "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
     # UFC
-    "Fortaleza", "Beberibe", "Camocim", "Caucaia", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo do Amarante", "Sobral",
+    "Fortaleza", "Beberibe", "Camocim", "Caucaia", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo Do Amarante", "Sobral",
     # UVA
     "Sobral",
     # URCA
@@ -92,7 +93,7 @@ mapa <- ggplot() +
     panel.background = element_rect(fill = "white", color = NA),
     plot.title = element_text(size = 16, face = "bold")
   ) +
-  labs(title = "Mapa das Universidades com Licenciatura em Física no Ceará",
+  labs(title = "Mapa das Universidades Públicas com Licenciatura em Física no Ceará",
        fill = "Universidades")
 
 # Salvar o mapa como PNG e PDF
