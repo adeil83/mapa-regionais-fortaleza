@@ -23,11 +23,13 @@ universidades <- data.frame(
     # UECE
     "Fortaleza","Iguatu", "Limoeiro Do Norte", "Quixadá", "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
     # UFC
-    "Fortaleza", "Beberibe", "Camocim", "Caucaia", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo Do Amarante", "Sobral",
+    "Fortaleza","Aracoiaba", "Beberibe", "Camocim", "Caucaia", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo Do Amarante", "Sobral",
     # UVA
     "Sobral",
     # URCA
-    "Juazeiro Do Norte"
+    "Juazeiro Do Norte",
+    #UNILAB
+    "Acarape", "Redenção"
   ),
   UNIVERSIDADE = c(
     # IFCE
@@ -35,11 +37,13 @@ universidades <- data.frame(
     # UECE
     "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE", "UECE",
     # UFC
-    "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC",
+    "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC", "UFC",
     # UVA
     "UVA",
     # URCA
-    "URCA"
+    "URCA",
+    # UNILAB
+    "UNILAB", "UNILAB"
   )
 )
 
@@ -75,7 +79,8 @@ cores_universidades <- c(
   "UFC" = "#e41a1c",  # Vermelho
   "UVA" = "#984ea3",  # Roxo
   "URCA" = "#ff7f00",  # Laranja
-  "Múltiplas Universidades" = "#ffcc00"  # Amarelo para cidades com mais de uma universidade
+  "Múltiplas Universidades" = "#ffcc00",  # Amarelo para cidades com mais de uma universidade
+  "UNILAB" = "#6a3d9a" #Roxo
 )
 
 # Criar o mapa
@@ -102,4 +107,3 @@ ggsave("mapa_universidades_ce_final.pdf", plot = mapa, width = 12, height = 12)
 
 # Exibir o mapa
 print(mapa)
-
