@@ -32,7 +32,7 @@ cidades_fisica <- data.frame(
     "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
     "Fortaleza",
     "Beberibe", "Camocim", "Caucaia", "Fortaleza", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo Do Amarante", "Sobral",
-    "Sobral","Acarape", "Redeção", "Aracoiaba",
+    "Sobral","Acarape", "Redenção", "Aracoiaba",
     "Juazeiro Do Norte"
   ),
   CURSO = 1  # Indica a presença de um curso de Física
