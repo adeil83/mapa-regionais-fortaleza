@@ -31,9 +31,9 @@ cidades_fisica <- data.frame(
     "Iguatu", "Limoeiro do Norte", "Quixadá",
     "Brejo Santo", "Tauá", "Maranguape", "Jaguaribe", "Maracanaú", "Camocim",
     "Fortaleza",
-    "Beberibe", "Camocim", "Caucaia", "Fortaleza", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo do Amarante", "Sobral",
-    "Sobral",
-    "Juazeiro do Norte"
+    "Beberibe", "Camocim", "Caucaia", "Fortaleza", "Itapipoca", "Maranguape", "Quixeramobim", "Russas", "São Gonçalo Do Amarante", "Sobral",
+    "Sobral","Acarape", "Redeção", "Aracoiaba",
+    "Juazeiro Do Norte"
   ),
   CURSO = 1  # Indica a presença de um curso de Física
 )
@@ -97,3 +97,4 @@ ggsave("mapa_fisica_ce_corrigido.png", plot = mapa, width = 12, height = 12, dpi
 
 # Salvar o mapa como PDF para impressão
 ggsave("mapa_fisica_ce_corrigido.pdf", plot = mapa, width = 12, height = 12)
+
